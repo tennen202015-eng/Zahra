@@ -351,6 +351,8 @@ nav button[aria-selected="true"] .ni{background:var(--accent);color:#fff}
 .mic{width:60px;height:60px;border-radius:20px}
 details>summary{list-style:none}
 details>summary::-webkit-details-marker{display:none}
+.gbtn{display:inline-flex;align-items:center;justify-content:center;gap:10px}
+.gbtn .g{width:24px;height:24px;border-radius:50%;background:#fff;color:#4285F4;font-weight:700;font-size:15px;display:inline-flex;align-items:center;justify-content:center;font-family:Arial,sans-serif}
 </style>
 
 </head>
@@ -2471,6 +2473,95 @@ vMed=(f=>function(){
   const h=f();const i=h.indexOf('<div class="chips"><button class="chip" data-act="medF"');return i<0?h+card:h.slice(0,i)+card+h.slice(i);
 })(vMed);
 SUB.med=vMed;
+
+/* ===== Google sign-in + backup to the user's private Drive app folder (Android only) ===== */
+Object.assign(T,{
+gdT:['النسخ على Google Drive','Google Drive backup'],gdWeb:['متاح في تطبيق الأندرويد: تسجيل الدخول بجوجل ونسخة احتياطية تلقائية على Drive.','Available in the Android app: sign in with Google and back up automatically to Drive.'],
+gdD:['سجّلي الدخول بحساب جوجل، وتُحفظ نسخة من بياناتك في مساحة مخفية خاصة بالتطبيق داخل Google Drive بتاعك. لا تمر البيانات على أي سيرفر آخر، ولا يرى التطبيق باقي ملفاتك.','Sign in with Google and a copy of your data is kept in a hidden app-only space in your own Google Drive. It never passes through any other server, and the app cannot see your other files.'],
+gdSign:['تسجيل الدخول بجوجل','Sign in with Google'],gdOut:['تسجيل الخروج','Sign out'],gdNow:['انسخي الآن','Back up now'],gdRestore:['استعيدي من Drive','Restore from Drive'],
+gdAs:[e=>`متصلة بـ ${e}`,e=>`Connected as ${e}`],gdConnected:['متصلة بحساب جوجل','Connected to Google'],gdLast:[d=>`آخر نسخة: ${d}`,d=>`Last backup: ${d}`],gdNever:['لم تُحفظ نسخة بعد','No backup yet'],
+gdAuto:['نسخ تلقائي يومي','Automatic daily backup'],gdWorking:['جارٍ الاتصال بـ Drive…','Contacting Drive…'],gdSaved:['تم حفظ النسخة على Drive.','Backed up to Drive.'],gdRestored:['تمت استعادة بياناتك من Drive.','Your data was restored from Drive.'],
+gdNoFile:['لا توجد نسخة على Drive لهذا الحساب بعد.','There is no backup on Drive for this account yet.'],gdCancel:['تم إلغاء تسجيل الدخول.','Sign-in was cancelled.'],
+gdFail:['تعذر الاتصال بـ Drive. تأكدي من الإنترنت وحاولي مرة أخرى.','Could not reach Drive. Check your connection and try again.'],gdSetup:['تسجيل الدخول غير مُعدّ بعد في Google Cloud لهذا الإصدار.','Google sign-in is not set up in Google Cloud for this build yet.'],
+gdFoundT:['لقينا نسخة على Drive','We found a backup on Drive'],gdFoundD:[d=>`نسخة محفوظة بتاريخ ${d}. تحبي تستعيديها؟ ستحل محل البيانات الموجودة على هذا الجوال.`,d=>`A backup from ${d}. Restore it? It will replace the data on this phone.`],
+gdUseIt:['استعيدي النسخة','Restore backup'],gdKeep:['احتفظي ببيانات الجوال','Keep this phone’s data'],
+gdRestoreT:['استعادة من Drive؟','Restore from Drive?'],gdRestoreD:['ستحل النسخة المحفوظة على Drive محل كل البيانات الموجودة على هذا الجوال.','The Drive backup will replace all data on this phone.'],gdYes:['نعم، استعيدي','Yes, restore'],
+gdNote:['النسخة لا تشمل رمز القفل. وتسجيل الخروج يلغي وصول التطبيق إلى Drive دون حذف النسخة.','Backups do not include your lock PIN. Signing out removes the app’s access to Drive without deleting the backup.']
+});
+const GD=NATIVE?RP('GoogleDrive'):null,GFILE='zahra-backup.json',GAPI='https://www.googleapis.com';
+const CL=()=>(S.cloud=Object.assign({on:false,email:'',last:0,auto:true,fileId:null},S.cloud||{}));
+async function gToken(interactive){const r=await GD.authorize({interactive});return r.accessToken}
+async function gReq(tok,url,opt={}){const r=await fetch(url,Object.assign({},opt,{headers:Object.assign({Authorization:'Bearer '+tok},opt.headers||{})}));if(!r.ok)throw {code:'http',status:r.status};return r}
+async function gFind(tok){const q=encodeURIComponent(`name='${GFILE}' and trashed=false`);const r=await gReq(tok,`${GAPI}/drive/v3/files?spaces=appDataFolder&q=${q}&fields=files(id,modifiedTime)&orderBy=modifiedTime desc`);const j=await r.json();return (j.files||[])[0]||null}
+async function gUpload(tok){
+  const c=CL();let id=c.fileId;
+  if(!id){const f=await gFind(tok);id=f&&f.id}
+  if(!id){const r=await gReq(tok,`${GAPI}/drive/v3/files?fields=id`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:GFILE,parents:['appDataFolder'],mimeType:'application/json'})});id=(await r.json()).id}
+  const body=JSON.stringify(Object.assign({},JSON.parse(backupJSON()),{cloud:null,notif:S.notif}));
+  await gReq(tok,`${GAPI}/upload/drive/v3/files/${id}?uploadType=media`,{method:'PATCH',headers:{'Content-Type':'application/json'},body});
+  c.fileId=id;c.last=Date.now();
+}
+const gErr=e=>e&&e.code==='CANCELLED'?t('gdCancel'):e&&(e.code==='ERR_AUTH'||/^ERR_1[0-9]$/.test(e.code||''))?t('gdSetup'):t('gdFail');
+const gMsg=m=>{U.gMsg=m;const el=document.getElementById('gdmsg');if(el)el.textContent=m};
+const isSampleData=()=>S.sampleCycle&&S.samplePreg;
+async function gBackup(silent){
+  if(!GD||U.decoy||!CL().on||isSampleData())return;
+  if(!silent)gMsg(t('gdWorking'));
+  try{const tok=await gToken(!silent);await gUpload(tok);_saveBase();if(!silent){gMsg(t('gdSaved'));render()}}
+  catch(e){if(!silent)gMsg(gErr(e))}
+}
+async function gRestoreNow(){
+  gMsg(t('gdWorking'));
+  try{const tok=await gToken(true),f=await gFind(tok);if(!f){gMsg(t('gdNoFile'));return}
+    const txt=await (await gReq(tok,`${GAPI}/drive/v3/files/${f.id}?alt=media`)).text(),keepC=Object.assign({},CL(),{fileId:f.id,last:Date.now()});
+    if(restore(txt)){S.cloud=keepC;_saveBase();U.gMsg=t('gdRestored');render();scheduleSoon()}else gMsg(t('badBackup'));
+  }catch(e){gMsg(gErr(e))}
+}
+function gSheet(title,desc,yesAct,yesLbl,noAct,noLbl){
+  if(!MD)return;MD.innerHTML=`<div class="mback" data-close="1"></div><div class="msheet" role="dialog" aria-modal="true" aria-labelledby="gdt"><span class="ib tone-blue mic">${ico('shield',28)}</span>
+    <h2 id="gdt">${title}</h2><p class="small muted">${desc}</p><div class="row"><button class="primary" data-act="${yesAct}">${yesLbl}</button><button data-act="${noAct}">${noLbl}</button></div></div>`;MD.hidden=false;
+}
+async function gConnect(){
+  gMsg(t('gdWorking'));
+  try{
+    const tok=await gToken(true);let email='';
+    try{const u=await (await gReq(tok,`${GAPI}/oauth2/v3/userinfo`)).json();email=u.email||''}catch(e){}
+    const c=CL();c.on=true;c.email=email;c.fileId=null;_saveBase();
+    const f=await gFind(tok);
+    if(f){c.fileId=f.id;_saveBase();U.gMsg='';render();gSheet(t('gdFoundT'),t('gdFoundD',fmtY(f.modifiedTime.slice(0,10))),'gdUse',t('gdUseIt'),'gdKeep',t('gdKeep'));return}
+    await gUpload(tok);_saveBase();U.gMsg=t('gdSaved');render();
+  }catch(e){gMsg(gErr(e))}
+}
+function cloudCard(){
+  if(!NATIVE)return `<section class="card">${ch('shield','blue',t('gdT'))}<p class="small muted">${t('gdWeb')}</p></section>`;
+  const c=CL();
+  return `<section class="card">${ch('shield','blue',t('gdT'))}<p class="small muted">${t('gdD')}</p>
+    ${c.on?`<div class="inset"><b>${c.email?esc(t('gdAs',c.email)):t('gdConnected')}</b><span class="small muted">${c.last?t('gdLast',`${fmtY(fd(new Date(c.last)))} · ${clock(c.last)}`):t('gdNever')}</span></div>
+      <label class="check" for="gd-auto"><input type="checkbox" id="gd-auto" data-gdauto="1" ${c.auto?'checked':''}><span>${t('gdAuto')}</span></label>
+      <div class="row"><button class="primary" data-act="gdNow">${t('gdNow')}</button><button data-act="gdAskRestore">${t('gdRestore')}</button></div>
+      <div class="row"><button class="ghost" data-act="gdOut">${t('gdOut')}</button></div>`
+     :`<div class="row"><button class="primary gbtn" data-act="gdIn"><span class="g">G</span>${t('gdSign')}</button></div>`}
+    <p class="note" id="gdmsg">${esc(U.gMsg||'')}</p><p class="note">${t('gdNote')}</p></section>`;
+}
+const _vSetCloud=vSet;
+vSet=function(){const mk=`<section class="card"><h2>${t('backupT')}</h2>`,h=_vSetCloud();return h.includes(mk)?h.replace(mk,cloudCard()+mk):h+cloudCard()};
+SUB.set=vSet;
+document.addEventListener('click',e=>{
+  const b=e.target.closest('button');if(!b)return;const a=b.dataset.act;if(!a||!/^gd/.test(a))return;
+  e.stopPropagation();
+  if(a==='gdIn')gConnect();
+  else if(a==='gdNow')gBackup(false);
+  else if(a==='gdAskRestore')gSheet(t('gdRestoreT'),t('gdRestoreD'),'gdUse',t('gdYes'),'gdClose',t('cancel'));
+  else if(a==='gdUse'){closeMode();gRestoreNow()}
+  else if(a==='gdKeep'){closeMode();gBackup(false)}
+  else if(a==='gdClose')closeMode();
+  else if(a==='gdOut'){const c=CL();gToken(false).then(tok=>fetch(`https://oauth2.googleapis.com/revoke?token=${encodeURIComponent(tok)}`,{method:'POST'})).catch(()=>{});
+    S.cloud={on:false,email:'',last:0,auto:true,fileId:null};U.gMsg='';_saveBase();render()}
+},true);
+document.addEventListener('change',e=>{if(e.target.dataset&&e.target.dataset.gdauto){CL().auto=e.target.checked;_saveBase()}});
+/* automatic daily backup: on start and whenever the app comes back to the foreground */
+const gAuto=()=>{const c=CL();if(c.on&&c.auto&&Date.now()-c.last>20*3600e3)gBackup(true)};
+if(NATIVE){setTimeout(gAuto,6000);try{CP.App&&CP.App.addListener('resume',()=>setTimeout(gAuto,3000))}catch(e){}}
 
 render();
 

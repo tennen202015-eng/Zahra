@@ -20,4 +20,13 @@ const block = [
 ].join('\n');
 if (!m.includes('POST_NOTIFICATIONS')) m = m.replace('</manifest>', block + '\n</manifest>');
 fs.writeFileSync(man, m);
+
+// Google sign-in + Drive backup plugin (Java) and its Google Play services dependency
+const javaDir = 'android/app/src/main/java/com/zahra/tracker';
+fs.mkdirSync(javaDir, { recursive: true });
+for (const f of ['GoogleDrivePlugin.java', 'MainActivity.java']) fs.copyFileSync(path.join('android-src', f), path.join(javaDir, f));
+const gradle = 'android/app/build.gradle';
+let g = fs.readFileSync(gradle, 'utf8');
+if (!g.includes('play-services-auth')) g = g.replace(/dependencies\s*\{/, "dependencies {\n    implementation 'com.google.android.gms:play-services-auth:21.2.0'");
+fs.writeFileSync(gradle, g);
 console.log('android patched');
