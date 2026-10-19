@@ -1,0 +1,15 @@
+{
+  "appId": "com.zahra.tracker",
+  "appName": "زهرة",
+  "webDir": "www",
+  "android": {
+    "allowMixedContent": false,
+    "backgroundColor": "#C2304A"
+  },
+  "plugins": {
+    "LocalNotifications": {
+      "smallIcon": "ic_stat_zahra",
+      "iconColor": "#C2304A"
+    }
+  }
+}

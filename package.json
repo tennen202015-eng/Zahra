@@ -1,0 +1,26 @@
+{
+  "name": "zahra",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Zahra — period, pregnancy and baby tracker (Android, Capacitor)",
+  "scripts": {
+    "build:web": "node scripts/build-web.js",
+    "android:init": "npx cap add android && node scripts/patch-android.js",
+    "android:sync": "npm run build:web && npx cap sync android",
+    "android:apk": "npm run android:sync && cd android && ./gradlew assembleDebug"
+  },
+  "dependencies": {
+    "@capacitor/android": "^7.0.0",
+    "@capacitor/app": "^7.0.0",
+    "@capacitor/core": "^7.0.0",
+    "@capacitor/filesystem": "^7.0.0",
+    "@capacitor/local-notifications": "^7.0.0",
+    "@capacitor/share": "^7.0.0",
+    "@fontsource/ibm-plex-sans-arabic": "^5.0.0",
+    "@fontsource/reem-kufi": "^5.0.0",
+    "jspdf": "2.5.1"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^7.0.0"
+  }
+}
