@@ -326,6 +326,31 @@ select{font:inherit;color:var(--ink);background:var(--bg);border:1.5px solid tra
 nav .ni{display:inline-flex;align-items:center;justify-content:center;width:44px;height:30px;border-radius:99px}
 nav button[aria-selected="true"]{background:transparent}
 nav button[aria-selected="true"] .ni{background:var(--accent);color:#fff}
+
+/* ===== v4: 3D ring + confirm sheet ===== */
+.ring3{width:100%;max-width:340px;display:block;overflow:visible;margin-top:-4px}
+.ring3 text{font-family:var(--f-body)}
+.ring3 .seg{transform-box:fill-box;transform-origin:center}
+.hp{padding-bottom:56px}
+@media (prefers-reduced-motion:no-preference){
+  .ring3 .seg{animation:zseg .55s cubic-bezier(.2,.8,.3,1.2) both}
+  .ring3 .pin{animation:zbob 2.8s ease-in-out infinite}
+  .msheet{animation:zup .28s cubic-bezier(.2,.8,.3,1) both}
+  .mback{animation:zfade .2s both}
+}
+@keyframes zseg{from{opacity:0;transform:translateY(-14px) scale(.9)}to{opacity:1;transform:none}}
+@keyframes zbob{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+@keyframes zup{from{transform:translateY(100%)}to{transform:none}}
+@keyframes zfade{from{opacity:0}to{opacity:1}}
+#zmodal{position:fixed;inset:0;z-index:50}
+.mback{position:absolute;inset:0;background:rgba(10,4,8,.5)}
+.msheet{position:absolute;left:0;right:0;bottom:0;margin:0 auto;max-width:520px;background:var(--surface);color:var(--ink);border-radius:28px 28px 0 0;
+  padding:24px max(20px,env(safe-area-inset-right,0px)) calc(22px + env(safe-area-inset-bottom,0px)) max(20px,env(safe-area-inset-left,0px));
+  display:flex;flex-direction:column;align-items:center;text-align:center;gap:12px;box-shadow:0 -10px 40px -10px rgba(0,0,0,.35)}
+.msheet .row{width:100%}
+.mic{width:60px;height:60px;border-radius:20px}
+details>summary{list-style:none}
+details>summary::-webkit-details-marker{display:none}
 </style>
 
 </head>
@@ -2058,7 +2083,7 @@ function ppHome(){
   h+=`<section class="card">${ch('heart','rose',t('momT'))}<div class="chips">${[['good','moodGood'],['tired','moodTired'],['low','moodLow']].map(([k,l])=>`<button class="chip" data-act="ppMood" data-k="${k}" aria-pressed="${mt===k}">${t(l)}</button>`).join('')}</div></section>`;
   const rw=Math.min(7,A.w+1);
   h+=`<section class="card">${ch('shield','teal',t('recT',A.w+1))}<p class="small">${t('rec'+rw)}</p>${A.w>=5?`<div class="inset"><p class="small muted">${t('periodBackD')}</p><div class="row"><button data-act="periodBack">${t('periodBack')}</button></div></div>`:''}</section>`;
-  h+=`<section class="card">${ch('sos','rose',t('ppWarn'),`<button class="ghost" data-mgo="sos">${t('sos')}</button>`)}<ul class="pats">${t('dPP').split('|').map(x=>`<li>${x}</li>`).join('')}</ul></section>`;
+  h+=`<section class="card">${ch('sos','rose',t('ppWarn'))}<p class="small muted">${t('ppWarnNote')}</p><ul class="pats">${t('dPP').split('|').map(x=>`<li>${x}</li>`).join('')}</ul></section>`;
   return h+habits();
 }
 function weekBars(vals,labels,fmtV,col){
@@ -2142,7 +2167,7 @@ function vSos(){
 
 /* ---------- more hub (icons) ---------- */
 function vMore(){
-  ensurePP();const ql=qadaLeft(),bs=badges(),R=[['ai','chat','teal',t('mAi'),t('mAiD')],['sos','sos','rose',t('sosT'),t('ambulance')],['med','file','blue',t('mMed'),S.med.length?String(S.med.length):t('mMedD')],['report','book','amber',t('mReport'),t('mReportD')],
+  ensurePP();const ql=qadaLeft(),bs=badges(),R=[['ai','chat','teal',t('mAi'),t('mAiD')],['med','file','blue',t('mMed'),S.med.length?String(S.med.length):t('mMedD')],['report','book','amber',t('mReport'),t('mReportD')],
     ['qada','moon','teal',t('mQada'),ql?t('leftX',ql):t('mQadaD')],['badges','star','amber',t('mBadges'),t('mBadgesD',bs.filter(b=>b.done).length,bs.length)],['lib','book','blue',t('mLib'),t('mLibD')]];
   if(S.mode==='preg')R.push(['card','spark','rose',t('mCard'),t('mCardD')],['names','heart','rose',t('mNames'),S.names.length?t('namesN',S.names.length):t('mNamesD')]);
   R.push(['set','gear','ink',t('mSet'),t('mSetD')]);
@@ -2165,7 +2190,7 @@ function render(){
   if(!VIEWS[S.mode][U.tab[S.mode]])U.tab[S.mode]='home';
   const tab=U.tab[S.mode],v=VIEWS[S.mode][tab]();
   const greet=S.name?`${t('hello',esc(S.name))} · `:'';
-  document.getElementById('app').innerHTML=`<header><div class="brand"><div class="brow"><h1>${S.lock.disguise?t('disguiseName'):t('appName')}</h1><button class="sosb" data-mgo="sos" aria-label="${t('sosT')}">${ico('sos',14)}${t('sos')}</button></div><span class="today">${greet}${fmt(TODAY,{weekday:'long',day:'numeric',month:'long'})} · ${hijri(TODAY)}</span></div>
+  document.getElementById('app').innerHTML=`<header><div class="brand"><div class="brow"><h1>${S.lock.disguise?t('disguiseName'):t('appName')}</h1></div><span class="today">${greet}${fmt(TODAY,{weekday:'long',day:'numeric',month:'long'})} · ${hijri(TODAY)}</span></div>
     <div class="seg seg3" role="group" aria-label="${t('modeGroup')}">${[['cycle','modeCycle'],['preg','modePreg'],['pp','modePP']].map(([k,l])=>`<button data-mode="${k}" aria-pressed="${S.mode===k}">${t(l)}</button>`).join('')}</div></header>${v}`;
   document.getElementById('nav').innerHTML=NAV[S.mode].map(([k,l,i])=>`<button data-tab="${k}" role="tab" aria-selected="${tab===k}"><span class="ni">${ico(i,22)}</span>${t(l)}</button>`).join('');
 }
@@ -2356,6 +2381,96 @@ if(NATIVE){
   try{AP&&AP.addListener('resume',()=>{if(fd(new Date())!==TODAY)location.reload();else scheduleSoon()})}catch(e){}
   setTimeout(reschedule,2500);
 }
+
+/* ===== v4: 3D ring, mode-switch confirmation, emergency numbers removed ===== */
+Object.assign(T,{
+modeAskT:[m=>`التحويل إلى ${m==='preg'?'وضع الحمل':m==='pp'?'وضع الأمومة':'وضع الدورة'}؟`,m=>`Switch to ${m==='preg'?'Pregnancy':m==='pp'?'Baby':'Cycle'} mode?`],
+modeAsk_cycle:['ستظهر شاشة الدورة وتوقعاتها وتنبيهاتها. بيانات الحمل والأمومة تبقى محفوظة.','You will see your cycle home, forecasts and reminders. Pregnancy and baby data stay saved.'],
+modeAsk_preg:['ستظهر شاشة الحمل وأدواته، وتتوقف تنبيهات الدورة. بيانات الدورة تبقى محفوظة ويمكنك الرجوع في أي وقت.','You will see your pregnancy home and tools, and cycle reminders pause. Cycle data stays saved and you can switch back any time.'],
+modeAsk_pp:['ستظهر شاشة الأمومة: الرضاعة والنوم والتطعيمات. بياناتك الأخرى تبقى محفوظة.','You will see the baby home: feeding, sleep and vaccines. Your other data stays saved.'],
+modeYes:['نعم، حوّلي','Yes, switch'],modeNo:['لا، ابقي هنا','No, stay here'],
+ppWarnNote:['إذا ظهرت أي علامة منها، توجهي للطوارئ فوراً.','If any of these happen, go to the emergency room right away.']
+});
+
+/* ---------- 3D torus ring: tilted annulus with extruded walls, lit top faces, a floating day marker ---------- */
+function torus(segs,o){
+  const n=segs.length,cx=160,cy=112,R2=132,R1=90,k=.56,h=18,g=n>60?.35:n>40?.6:1.1,P=a=>a*Math.PI/180;
+  const pt=(r,a,dy=0)=>`${(cx+r*Math.cos(P(a))).toFixed(1)},${(cy+r*Math.sin(P(a))*k+dy).toFixed(1)}`;
+  const arc=(r,a0,a1,dy=0)=>{const m=Math.max(2,Math.ceil(Math.abs(a1-a0)/3)),p=[];for(let i=0;i<=m;i++)p.push(pt(r,a0+(a1-a0)*i/m,dy));return p};
+  const rng=i=>[-90+i/n*360+g,-90+(i+1)/n*360-g];
+  const clip=(a0,a1,lo,hi)=>{const b0=Math.max(a0,lo),b1=Math.min(a1,hi);return b1>b0?[b0,b1]:null};
+  let walls='',tops='',back='';
+  segs.forEach((s,i)=>{const [a0,a1]=rng(i);
+    const fw=clip(a0,a1,0,180);if(fw)walls+=`<polygon points="${[...arc(R2,fw[0],fw[1]),...arc(R2,fw[1],fw[0],h)].join(' ')}" fill="${s.wall}"/>`;
+    for(const [lo,hi] of [[-90,0],[180,270]]){const bw=clip(a0,a1,lo,hi);if(bw)back+=`<polygon points="${[...arc(R1,bw[0],bw[1]),...arc(R1,bw[1],bw[0],h)].join(' ')}" fill="${s.wall}" opacity=".85"/>`}
+    tops+=`<polygon class="seg" style="animation-delay:${Math.round(i*18)}ms" points="${[...arc(R2,a0,a1),...arc(R1,a1,a0)].join(' ')}" fill="${s.top}" fill-opacity="${s.op??1}"/>`;
+  });
+  let mk='';
+  if(o.marker!=null){const [a0,a1]=rng(o.marker),am=(a0+a1)/2,rm=R2-11,mx=cx+rm*Math.cos(P(am)),my=cy+rm*Math.sin(P(am))*k;
+    mk=`<g class="pin"><ellipse cx="${mx.toFixed(1)}" cy="${(my+1).toFixed(1)}" rx="11" ry="4.5" fill="rgba(0,0,0,.28)"/>
+      <line x1="${mx.toFixed(1)}" y1="${my.toFixed(1)}" x2="${mx.toFixed(1)}" y2="${(my-20).toFixed(1)}" stroke="rgba(255,255,255,.9)" stroke-width="3" stroke-linecap="round"/>
+      <circle cx="${mx.toFixed(1)}" cy="${(my-27).toFixed(1)}" r="12" fill="url(#zsph)"/><circle cx="${(mx-3.5).toFixed(1)}" cy="${(my-31).toFixed(1)}" r="3.5" fill="rgba(255,255,255,.85)"/></g>`}
+  return `<svg class="ring3" viewBox="0 0 320 250" role="img" aria-label="${o.aria}">
+    <defs><radialGradient id="zsph" cx="35%" cy="30%" r="70%"><stop offset="0" stop-color="#fff"/><stop offset=".45" stop-color="var(--gold)"/><stop offset="1" stop-color="#B9831E"/></radialGradient>
+      <linearGradient id="zsheen" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".35"/><stop offset=".55" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".12"/></linearGradient>
+      <radialGradient id="zdisc" cx="50%" cy="40%" r="60%"><stop offset="0" stop-color="#fff" stop-opacity=".2"/><stop offset="1" stop-color="#fff" stop-opacity=".04"/></radialGradient>
+      <filter id="zblur" x="-20%" y="-50%" width="140%" height="200%"><feGaussianBlur stdDeviation="9"/></filter></defs>
+    <ellipse cx="${cx}" cy="${cy+h+26}" rx="${R2+6}" ry="${R2*k*.62}" fill="rgba(0,0,0,.32)" filter="url(#zblur)"/>
+    <ellipse cx="${cx}" cy="${cy+h*.6}" rx="${R1}" ry="${R1*k}" fill="rgba(0,0,0,.14)"/>
+    ${back}${walls}<g class="tops">${tops}</g>
+    <path d="M${pt(R2,-90)} ${arc(R2,-90,270).join(' ')}" fill="none" stroke="url(#zsheen)" stroke-width="2"/>
+    <ellipse cx="${cx}" cy="${cy}" rx="${R1-2}" ry="${(R1-2)*k}" fill="url(#zdisc)"/>
+    <ellipse cx="${cx}" cy="${cy}" rx="${R2}" ry="${R2*k}" fill="url(#zsheen)" opacity=".5" style="mix-blend-mode:soft-light"/>
+    <text x="${cx}" y="${cy-32}" text-anchor="middle" font-size="13" fill="rgba(255,255,255,.88)">${o.top}</text>
+    <text x="${cx}" y="${cy+11}" text-anchor="middle" font-size="50" font-weight="700" fill="#fff" style="paint-order:stroke" stroke="rgba(0,0,0,.12)" stroke-width="3">${o.num}</text>
+    <text x="${cx}" y="${cy+30}" text-anchor="middle" font-size="12" fill="rgba(255,255,255,.88)">${o.sub}</text>
+    ${mk}</svg>`;
+}
+const SEGC={period:{top:'#fff',wall:'rgba(255,255,255,.62)'},pred:{top:'rgba(255,255,255,.55)',wall:'rgba(255,255,255,.28)'},ovu:{top:'#FFD66B',wall:'#C9962E'},
+  fert:{top:'#FFD66B',wall:'#B88A2C'},none:{top:'rgba(255,255,255,.2)',wall:'rgba(0,0,0,.16)'}};
+function ringCycle(c,info){
+  const M=info.M,total=Math.max(Math.round(M.c0||info.avg),c.day),segs=[];
+  for(let i=1;i<=total;i++){const d=add(c.last,i-1),tp=info.m.get(d),p=info.P.get(d)||0;
+    if(tp==='period')segs.push(SEGC.period);else if(tp==='pred')segs.push(SEGC.pred);else if(tp==='ovu')segs.push(SEGC.ovu);
+    else if(p>=.02)segs.push(Object.assign({},SEGC.fert,{op:+(.35+.65*Math.min(1,p/.33)).toFixed(2)}));else segs.push(SEGC.none)}
+  return torus(segs,{marker:c.day-1,top:t('ringDay'),num:c.day,sub:t('ringSub',Math.round(M.c0||info.avg)),aria:t('ringAria',c.day)});
+}
+function ringPreg(p){
+  const segs=[];for(let w=1;w<=40;w++)segs.push(w<=p.w?(w===14||w===28?SEGC.ovu:SEGC.period):(w===14||w===28?{top:'rgba(255,214,107,.55)',wall:'rgba(185,138,44,.5)'}:SEGC.none));
+  return torus(segs,{marker:Math.min(39,Math.max(0,p.w)),top:t('week'),num:p.w,sub:p.d?t('plusD',p.d):t('exact'),aria:t('weekN',p.w)});
+}
+
+/* ---------- confirm before switching modes ---------- */
+let MD=null;try{MD=document.createElement('div');MD.id='zmodal';MD.hidden=true;document.body.appendChild(MD)}catch(e){MD=null}
+function askMode(m){
+  if(!MD){S.mode=m;save();render();return}
+  const ic=m==='preg'?'heart':m==='pp'?'baby':'drop',tn=m==='preg'?'teal':m==='pp'?'blue':'rose';
+  MD.innerHTML=`<div class="mback" data-close="1"></div><div class="msheet" role="dialog" aria-modal="true" aria-labelledby="zmt">
+    <span class="ib tone-${tn} mic">${ico(ic,28)}</span><h2 id="zmt">${t('modeAskT',m)}</h2><p class="small muted">${t('modeAsk_'+m)}</p>
+    <div class="row"><button class="primary" data-act="modeYes" data-m="${m}">${t('modeYes')}</button><button data-act="modeNo">${t('modeNo')}</button></div></div>`;
+  MD.hidden=false;const b=MD.querySelector('[data-act="modeYes"]');if(b)b.focus();
+}
+const closeMode=()=>{if(MD){MD.hidden=true;MD.innerHTML=''}};
+document.addEventListener('click',e=>{
+  if(e.target.closest&&e.target.closest('[data-close]')){closeMode();return}
+  const b=e.target.closest('button');if(!b)return;const D=b.dataset;
+  if(D.mode){e.stopPropagation();if(D.mode!==S.mode)askMode(D.mode);return}
+  if(D.act==='modeNo'){e.stopPropagation();closeMode();return}
+  if(D.act==='modeYes'){e.stopPropagation();closeMode();S.mode=D.m;U.confirm=null;U.msg='';U.more=null;U.tab[S.mode]=U.tab[S.mode]||'home';save();render();scrollTo(0,0);return}
+},true);
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&MD&&!MD.hidden)closeMode()});
+
+/* ---------- emergency numbers removed: header button, More entry and the numbers screen ---------- */
+delete SUB.sos;
+/* medical card (no phone numbers screen) lives in the medical file now */
+vMed=(f=>function(){
+  ensurePP();const o=S.sos||{},fl=(k,l,ty='text')=>`<label for="sos-${k}">${t(l)}<input id="sos-${k}" data-sos="${k}" type="${ty}" value="${esc(o[k]||'')}" ${ty==='tel'?'dir="ltr" inputmode="tel"':''}></label>`;
+  const card=`<section class="card"><details${o.blood||o.allergies?'':' '}><summary>${ch('shield','teal',t('myCard'))}</summary><div style="display:flex;flex-direction:column;gap:10px;padding-top:12px">
+    <p class="small muted">${t('myCardD')}</p><div class="row">${fl('blood','blood')}${fl('allergies','allergies')}</div>${fl('conditions','conditions')}
+    <div class="row">${fl('doctor','doctor')}${fl('doctorPhone','phone','tel')}</div><div class="row">${fl('hospital','hospital')}${fl('hospitalPhone','phone','tel')}</div></div></details></section>`;
+  const h=f();const i=h.indexOf('<div class="chips"><button class="chip" data-act="medF"');return i<0?h+card:h.slice(0,i)+card+h.slice(i);
+})(vMed);
+SUB.med=vMed;
 
 render();
 
